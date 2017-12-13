@@ -37,11 +37,11 @@ This README would normally document whatever steps are necessary to get your app
 * navigate to /repo/test_project/
 * run pip install --upgrade pip
 * run pip install -r requirement.txt
-* run cd brains
+* run cd test_project
 * run python manage.py migrate
 * run python manage.py runserver
 * now you are done with the local dev env setup
-* open http://localhost:8000/admin/ to view your local web server
+* open http://localhost:8000/admin/ to view your local admin web server
 * Now your application will appear on - http://localhost:8000/
 * To open the admin panel:-
 Username- admin
@@ -56,10 +56,6 @@ password- demomode
 ### Contribution guidelines ###
 
 * Application Developed by - Sunny Kumar
-
-### Who do I talk to? ###
-
-* Repo owner
 
 ### Copyright 2017 Sunny Kumar
 Licensed under the Apache License, Version 2.0 (the "License");
