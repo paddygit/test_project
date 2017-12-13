@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container-fluid" style="padding:8%;">
+        <div class="row">
+            <div class="col-md-12 col-sm-12 col-xs-12">
+                <div class="col-md-offset-3 col-md-6">
+                    <div class="panel panel-primary">
+                        <div class="panel-heading">Online Test Evaluation Paper List</div>
+                        <div class="panel-body">
+                            <div id="paper_container">
+                                <div class="alert-box alert-default">
+                                    <ul class="titlename paper-list" id="render_test_paper">
+
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block extra_js %}
+    <script type="text/javascript">
+        var test_paper_data = "";
+        var test_paper_objects = {};
+        $("document").ready(function(){
+            var url = '/api/tests/';
+            render_test_paper(url);
+            set_ajax_token();
+        });
+
+        // Function to render Test name to choose
+        function render_test_paper(url){
+            var test_paper_data = get_test_paper(url).responseJSON;
+            for(var i=0; i<test_paper_data.results.length; i++){
+                if(test_paper_data.count>0){
+                    var template = '<a id="test_link" onclick="checkTestGiven(\''+test_paper_data.results[i]['slug']+'\')" style="cursor:pointer;">';
+                    template += '<li><b>'+test_paper_data.results[i].name+'</b></li>';
+                    template += '</a>';
+                    $("#render_test_paper").append(template);
+                }
+                else{
+                    var template = '<p class="text-center">No Test Paper Added</p>';
+                }
+            };
+        }
+
+        // Function to check user has given the test or not
+        function checkTestGiven(slug){
+            var url = '/api/result/?user__username={{user.username}}&answer__question__test__slug='+slug;
+            var test_status = get_answers(url).responseJSON;
+            if(test_status.count>0){
+                alert("you have already given the test")
+            }
+            else{
+               location.href="/test/"+slug+"/";
+            }
+        }
+     </script>
+    <script src="/static/js/main.js?{% now 'U' %}"></script>
+    <script src="/static/js/apis/test_api.js?{% now 'U' %}"></script>
+{% endblock %}

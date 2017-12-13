@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container-fluid" style="padding:8%;">
+        <div class="row">
+            <div class="col-md-12 col-sm-12 col-xs-12">
+                <div class="col-md-8 col-md-offset-2">
+                    <div class="panel panel-primary">
+                        <div class="panel-body" id="result_container">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock%}
+
+{% block extra_js %}
+    <script type="text/javascript">
+        $("document").ready(function(){
+            var url = '/api/result/?user__username={{user.username}}&answer__question__test__slug={{test_paper_slug}}&answer__is_valid=true';
+            render_result(url);
+            set_ajax_token();
+        });
+
+        // Function to render test result
+        function render_result(url){
+            var test_result = get_answers(url).responseJSON;
+            var template = '<div class="text-center">';
+            template += '<h4>Thank You for giving the '+test_result.results[0].answer.question.test.name+' Test</h4>';
+            template += '<h3>Your score is : <b>'+test_result.count+'</b> out off '+test_result.results[0].answer.question.test.no_of_question+'</h3>';
+            template += '<br>';
+            template += '<div class="go_home">';
+            template += 'Do you want to give another test <a href="/">click here</a>';
+            template += '</div>';
+            template += '</div>';
+            $("#result_container").append(template);
+        }
+    </script>
+    <script src="/static/js/main.js?{% now 'U' %}"></script>
+    <script src="/static/js/apis/test_api.js?{% now 'U' %}"></script>
+{% endblock%}

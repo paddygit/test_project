@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container-fluid" style="padding:8%;">
+        <div class="row">
+            <div class="col-md-12 col-sm-12 col-xs-12">
+                <div class="col-md-offset-2 col-md-8">
+                    <div class="panel panel-primary">
+                        <div class="panel-heading"><span id="test_name"></span> Test Evaluation</div>
+                        <div class="panel-body">
+                            <div id="instruction_container">
+                                <p><span class="titlename bold">Instructions:</span></p>
+                                <ul class="instructions-list" id="test_instruction">
+                                </ul>
+                                <br>
+                                <p class="text-center">
+                                    <button class="btn btn-primary">
+                                        <a href="/test/{{test_paper_slug}}/start/" style="color:white; text-decoration:none;">Start Test</a>
+                                    </button>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script type="text/javascript">
+        var test_paper_data = "";
+        var test_paper_objects = {};
+        $("document").ready(function(){
+            var url = '/api/tests/?slug={{test_paper_slug}}';
+            render_test_instruction(url);
+            set_ajax_token();
+        });
+
+        // Function to render Test Instruction
+        function render_test_instruction(url){
+            test_paper_data = get_test_paper(url).responseJSON;
+            $("#test_name").html(test_paper_data.results[0].name);
+            var template = '<div>';
+            template += '<li>Number of questions: <strong>'+test_paper_data.results[0].no_of_question+'</strong></li>';
+            template += '<li>Test should be completed in: <strong>'+test_paper_data.results[0].duration+'</strong> Min.</li>';
+            template += '<li>Must be finished in one sitting. You cannot save and finish later.</li>';
+            template += '<li>Questions displayed per page: <strong>1</strong></li>';
+            template += '<li>Will allow you to go back and change your answers.</li>';
+            template += '</div>';
+            $("#test_instruction").append(template);
+        }
+    </script>
+    <script src="/static/js/main.js?{% now 'U' %}"></script>
+    <script src="/static/js/apis/test_api.js?{% now 'U' %}"></script>
+{% endblock %}

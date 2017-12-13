@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container" style="padding-top:8%;">
+        <p class="pull-right"><b>Time left = <span id="timer"></span> minutes!</b></p>
+        <div id="myCarousel" class="carousel slide" data-ride="carousel" data-interval="false">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="col-md-8 col-md-offset-2">
+                        <div class="panel panel-primary">
+                            <div class="panel-body">
+                                <div class="carousel-inner" id="question_stack">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <!-- /.row -->
+            <div class="row">
+                <div class="col-md-8 col-md-offset-2">
+                    <div class="col-md-5 pull-right">
+                        <button class="btn btn-default" id="prev" data-target="#myCarousel" data-slide="prev">
+                            Previous
+                        </button>
+                        <button class="btn btn-primary" id="next" data-target="#myCarousel"
+                                data-slide="next">
+                            Next
+                        </button>
+                        <button class="btn btn-success" id="end_test" onclick="submitPaper()" disabled>End Test
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- /.row -->
+        </div>
+    </div>
+    <!-- /.container -->
+
+{% endblock%}
+
+{% block extra_js %}
+    <script type="text/javascript">
+        var test_paper_data = "";
+        var test_duration = "";
+        var answer_list ={};
+
+        $("document").ready(function(){
+            var url = '/api/question/?test__slug={{test_paper_slug}}';
+            var test_url = '/api/tests/?slug={{test_paper_slug}}';
+            render_test_duration(test_url);
+            render_test_paper(url);
+            set_ajax_token();
+        });
+
+        // Function to render Test Duration
+        function render_test_duration(url){
+            test_data = get_test_paper(url).responseJSON;
+            test_duration = test_data.results[0].duration;
+            document.getElementById('timer').innerHTML = test_duration + ":" + 00;
+            startTimer();
+        }
+
+        // Function to render test paper questions with choices
+        function render_test_paper(url){
+            var test_paper_data = get_test_question_with_choices(url).responseJSON;
+            $("#question_stack").empty();
+            $(".carousel-indicators").empty();
+            for(var i=0; i<test_paper_data.results.length; i++){
+                if(i == 0){
+                    var template = '<div class="item active">';
+                }
+                else{
+                    var template = '<div class="item">';
+                }
+                template += '<div id="ques_'+test_paper_data.results[i].id+'">';
+                template += '<h4>Q'+test_paper_data.results[i].id+': <strong>'+test_paper_data.results[i].question_text+'</strong></h4>';
+                for(var j=0; j<test_paper_data.results[i].choices.length; j++){
+                    template += '<div class="radio">';
+                    template += '<label><input type="radio" name="answers_'+test_paper_data.results[i].id+'" value="'+test_paper_data.results[i].choices[j].choice_id+',ques_'+test_paper_data.results[i].id+'">'+test_paper_data.results[i].choices[j].choice_text+'</label>';
+                    template += '<br></div>';
+                }
+                template += '</div>';
+                template += '</div>';
+                $("#question_stack").append(template);
+            }
+        }
+
+        // Logic for next and previous button
+        $('#prev').prop('disabled', true);
+        $('#myCarousel').on('slid.bs.carousel', function (ev) {
+            var carouselData = $(this).data('bs.carousel');
+            var currentIndex = carouselData.getItemIndex(carouselData.$element.find('.item.active'));
+
+            if (currentIndex >= 1) {
+                $('#prev').prop('disabled', false);
+            }
+            else {
+                $('#prev').prop('disabled', true);
+            }
+
+            if (currentIndex === (carouselData.$items.length-1)) {
+                $('#next').prop('disabled', true);
+                $('#prev').prop('disabled', false);
+            }
+            else {
+                $('#next').prop('disabled', false);
+            }
+        })
+
+        // Function for countdown timer
+        function startTimer() {
+            var presentTime = document.getElementById('timer').innerHTML;
+            var timeArray = presentTime.split(/[:]+/);
+            var m = timeArray[0];
+            var s = checkSecond((timeArray[1] - 1));
+            if(s==59){
+                m=m-1
+            }
+            if(m<59){
+                //alert('you have only 59 sec to complete the test')
+            }
+            if(m<0){
+                clearTimeout(m);
+                var nodes = document.getElementById("question_stack").getElementsByTagName('*');
+                for(var i = 0; i < nodes.length; i++){
+                     nodes[i].disabled = true;
+                }
+                $('#next').prop('disabled', true);
+                $('#prev').prop('disabled', true);
+                return;
+            }
+            document.getElementById('timer').innerHTML = m + ":" + s;
+            setTimeout(startTimer, 1000);
+        }
+
+        function checkSecond(sec) {
+            if (sec < 10 && sec >= 0) {
+                sec = "0" + sec
+            }; // add zero in front of numbers < 10
+            if (sec < 0) {
+                sec = "59"
+            };
+            return sec;
+        }
+
+        // Function for check radio event
+        $(function(){
+            $('input[type="radio"]').click(function(){
+                if ($(this).is(':checked'))
+                {
+                    answer_list[($(this).val()).split(',')[1]] = ($(this).val()).split(',')[0];
+                    $('#end_test').prop('disabled', false);
+                }
+            });
+        });
+
+        // Function to post answers
+        function submitPaper(){
+            var url = '/api/result/';
+            var answer_sheet = {};
+            for(var key in answer_list){
+                var value = answer_list[key];
+                answer_sheet['user'] = '/api/users/{{user.id}}/';
+                answer_sheet['answer'] = "/api/multiplechoice/"+value+"/";
+                submit_answer = post_answers(url, answer_sheet);
+                //console.log(submit_answer)
+            }
+            if(submit_answer.responseJSON[0] == "You have already given the answer"){
+                alert("You have already given the Test")
+            }
+            if(submit_answer.statusText == "Created"){
+                window.location = "/test/{{test_paper_slug}}/result/";
+            }
+        }
+     </script>
+    <script src="/static/js/main.js?{% now 'U' %}"></script>
+    <script src="/static/js/apis/test_api.js?{% now 'U' %}"></script>
+{% endblock %}
